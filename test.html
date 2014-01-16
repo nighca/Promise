@@ -1,0 +1,106 @@
+<script type="text/javascript" src="promise.js"></script>
+<script>
+/*
+ * Test --------------------------------------------------------------------
+ */
+
+var output = function(w){
+	document.write(JSON.stringify(w));
+	document.write('<br/>');
+};
+
+var i = 1;
+
+var r = function(max){
+	return Math.round(Math.random() * max);
+};
+
+var gen = function(callback){
+	var num = i++;
+	setTimeout(function(){
+		callback(null, 'data' + num);
+	}, r(500));
+};
+
+var genSlowly = function(callback){
+	var num = i++;
+	setTimeout(function(){
+		callback(null, 'data' + num);
+	}, 2000);
+};
+
+var plus = function(data, callback){
+	output(data);
+	setTimeout(function(){
+
+		if(data.length < 10){
+			callback(null, data + '+');
+		}else{
+			callback('too long');
+		}
+
+	}, r(500));
+};
+
+var push = function(datas, callback){
+	output(datas);
+	setTimeout(function(){
+
+		if(datas.push('+') < 10){
+			callback(null, datas);
+		}else{
+			callback('too long');
+		}
+
+	}, r(500));
+};
+
+var check = function(err, callback){
+	output(err ? err : 'unknown error!');
+	err.stack && output(err.stack);
+	callback(err);
+}
+
+var p1 =
+Promise.finish(gen, true)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(null, check)
+	;
+
+var p2 =
+Promise.finish([gen, gen, gen, gen, genSlowly], true)
+	.then(push)
+	.then(push)
+	.then(push)
+	.then(push)
+	.then(push)
+	.then(push)
+	.then(push)
+	.then(null, check)
+	.then(null, function(){
+		p1.run();
+	})
+	;
+
+var p3 =
+Promise.finishAny([gen, gen, gen, gen, genSlowly])
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(plus)
+	.then(null, check)
+	.then(null, function(){
+		p2.run();
+	})
+	;
+
+</script>
